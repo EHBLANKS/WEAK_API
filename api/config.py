@@ -46,12 +46,13 @@ class Settings(BaseSettings):
     APP_VERSION: str = get_version()
 
     # Connection to Postgres database
-    DATABASE_HOST: str = "localhost"
-    DATABASE_USER: str = "postgres"
-    DATABASE_PASSWORD: str = "vulnerable"
-    DATABASE_NAME: str = "vulnerable-api"
+    DATABASE_HOST: str = ""
+    DATABASE_USER: str = ""
+    DATABASE_PASSWORD: str = ""
+    DATABASE_NAME: str = ""
 
     SECRET = ""
+    FLAG = "MONSEC{sup3r_s3cr3t_fl4g}"
 
     class Config:
         env_file = ".env"

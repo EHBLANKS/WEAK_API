@@ -43,7 +43,7 @@ def test_user_creation():
     # Creation of the same user again, different password (trivial)
     params = {"username": "MONSEC", "password": "321"}
     response = client.post(
-        "/user/create-account",
+        "/user/signup",
         json=params,
     )
     res_data = response.json()
@@ -61,7 +61,7 @@ def test_user_login():
     # PART 1
     # Create account
     params = {"username": "notadmin", "password": "supersecret"}
-    response = client.post("/user/create-account", json=params)
+    response = client.post("/user/signup", json=params)
     assert response.status_code == status.HTTP_201_CREATED
 
     # Login into account

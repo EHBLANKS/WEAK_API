@@ -30,8 +30,20 @@ auth_handler = AuthHandler()
 users_db = []
 
 
-@router.post("/create-account", status_code=status.HTTP_201_CREATED)
+@router.post("/signup", status_code=status.HTTP_201_CREATED)
 def create_account(user_details: AuthDetails) -> None:
+    """
+    This endpoint creates a user account given a username and a password
+    in a json payload.
+
+    Args:
+        - username: str
+        - password: str
+
+    Returns: Response 201 Status Code (Created)
+
+    """
+
     # avoids creating 2 accounts with the same username
     # this does not avoid entering " monsec" -> "monsec"
     if any([user["username"] == user_details.username for user in users_db]):
@@ -40,11 +52,13 @@ def create_account(user_details: AuthDetails) -> None:
             detail=USERNAME_TAKEN,
         )
 
+    # hash the password and save it
     hashed_password = auth_handler.get_password_hash(user_details.password)
     users_db.append(
         {
             "username": user_details.username,
             "password": hashed_password,
+            "notes": [],
         }
     )
 
@@ -53,6 +67,16 @@ def create_account(user_details: AuthDetails) -> None:
 
 @router.post("/login")
 def login(auth_details: AuthDetails) -> dict:
+    """
+    This endpoint logins the user given a username and a password
+    in a json payload.
+    Args:
+        - username: str
+        - password: str
+
+    Returns:
+        - JWT token if successful
+    """
     user = None
     for _user in users_db:
         if _user["username"] == auth_details.username:
@@ -72,7 +96,6 @@ def login(auth_details: AuthDetails) -> dict:
     # else: return token
     token = auth_handler.encode_token(user["username"])
 
-    # TODO: set cookies here
     return {"token": token}
 
 
