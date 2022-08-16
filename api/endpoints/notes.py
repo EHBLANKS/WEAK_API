@@ -25,6 +25,7 @@ def fetch_notes(user=Depends(auth_handler.auth_wrapper)):
     Returns:
         - List with secrets of the user
     """
+
     pass
 
 
