@@ -50,6 +50,7 @@ class Settings(BaseSettings):
     DATABASE_USER: str = ""
     DATABASE_PASSWORD: str = ""
     DATABASE_NAME: str = ""
+    POSTGRES_PLUGINS = ["fuzzystrmatch"]
 
     SECRET = ""
     FLAG = "MONSEC{sup3r_s3cr3t_fl4g}"

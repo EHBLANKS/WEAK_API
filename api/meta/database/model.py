@@ -91,7 +91,8 @@ class User(Base):
 
 
 @generic_repr
-class Notes(Base):
+class Note(Base):
+    __tablename__ = "note"
     id = Column(
         UUID(as_uuid=True),
         primary_key=True,

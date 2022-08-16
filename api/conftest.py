@@ -9,12 +9,18 @@ import pytest
 from typing import Generator
 from fastapi.testclient import TestClient
 from fastapi import HTTPException, status, Header
+from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy import create_engine
-from sqlalchemy import database_exists, create_database, drop_database
+from sqlalchemy_utils import (
+    database_exists,
+    create_database,
+    drop_database,
+)
 
 # Local Imports
 from api.main import app
 from api.config import get_settings
+from api.meta.database.model import Base
 
 # --------------------------------------------------------------------------------
 
@@ -66,3 +72,27 @@ def test_session(worker_id):
     setup_session.commit()
 
     return SessionLocal
+
+
+@pytest.fixture(scope="function")
+def test_db(test_session) -> Session:
+    """Get the test db session"""
+
+    # Start a new test database connection session
+    test_db = test_session()
+
+    try:
+        # Begin transaction for direct database edits
+        test_db.begin_nested()
+
+        # then each time that SAVEPOINT ends, reopen it
+        @event.listens_for(test_db, "after_transaction_end")
+        def restart_savepoint(session, transaction):
+            if transaction.nested and not transaction._parent.nested:
+                session.begin_nested()
+
+        yield test_db
+    finally:
+        # Rollback any direct database edits
+        test_db.rollback()
+        test_db.close()
