@@ -32,12 +32,12 @@ router = APIRouter()
 settings = get_settings()
 auth_handler = AuthHandler()
 
-# we use this as db instead of a proper database for simplicity
-users_db = []
-
 
 @router.post("/signup", status_code=status.HTTP_201_CREATED)
-def create_account(user_details: AuthDetails, db: Session = Depends(get_db)) -> None:
+def create_account(
+    user_details: AuthDetails,
+    db: Session = Depends(get_db),
+) -> None:
     """
     This endpoint creates a user account given a username and a password
     in a json payload.
@@ -51,8 +51,7 @@ def create_account(user_details: AuthDetails, db: Session = Depends(get_db)) -> 
     """
 
     # avoids creating 2 accounts with the same username
-    # this does not avoid entering " monsec" -> "monsec"
-
+    # this might not avoid entering " monsec" -> "monsec"
     # check that the user is not in the db
     user_exists = (
         db.query(User).filter(User.username == user_details.username).one_or_none()

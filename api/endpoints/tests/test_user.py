@@ -17,7 +17,6 @@ from api.meta.constants.errors import INVALID_USER_PASSWORD, USERNAME_TAKEN
 import api.meta.database.model as mdl
 
 from api.config import get_settings
-from api.endpoints.user import users_db
 from pprint import pprint as pp
 
 settings = get_settings()
@@ -36,9 +35,10 @@ def test_user_creation(client: TestClient, test_db: Session):
     )
     res_data = response.json()
     assert res_data is None
-    assert len(users_db) == 1
     assert response.status_code == status.HTTP_201_CREATED
-    assert any([user["username"] == "MONSEC" for user in users_db])
+    # check that the user has been created in the database properly
+    query = test_db.query(mdl.User).filter(mdl.User.username == "MONSEC").one_or_none()
+    assert query is not None
 
 
 def test_user_creation_same_user(client: TestClient, test_db: Session):

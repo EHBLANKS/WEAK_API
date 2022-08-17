@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 
 # Local Imports
-from api.endpoints import user
+from api.endpoints import user, notes
 from api.config import get_settings
 from api.meta.constants.errors import BAD_REQUEST
 
@@ -112,5 +112,12 @@ app.include_router(
     user.router,
     prefix="/user",
     tags=["User"],
+    responses=DEFAULT_RESPONSE_CODES,
+)
+
+app.include_router(
+    notes.router,
+    prefix="/notes",
+    tags=["Notes"],
     responses=DEFAULT_RESPONSE_CODES,
 )
