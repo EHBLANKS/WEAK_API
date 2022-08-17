@@ -9,3 +9,7 @@ USERNAME_TAKEN = "Username already taken"
 
 # LOGIN ERRORS
 INVALID_USER_PASSWORD = "Invalid username and/or password"
+
+
+# RESPONSE ERRORS
+SOMETHING_WENT_WRONG = "Something went wrong"

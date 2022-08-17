@@ -3,7 +3,7 @@ conftest.py
 configures our pytest test runner and sets up the local database for testing
 """
 
-#System imports
+# System imports
 from re import compile as re_compile
 
 # Package Imports
@@ -12,7 +12,7 @@ from requests_mock import Mocker
 from typing import Generator
 from sqlalchemy.orm import Session, sessionmaker
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine,event
+from sqlalchemy import create_engine, event
 from sqlalchemy_utils import (
     database_exists,
     create_database,
@@ -43,7 +43,7 @@ def test_session(worker_id):
         settings.DATABASE_USER,
         settings.DATABASE_PASSWORD,
         settings.DATABASE_HOST,
-        f"TESTMONSEC{worker_id}",
+        f"DVWA_pytest{worker_id}",
     )
 
     engine = create_engine(SQLALCHEMY_DATABASE_URL)

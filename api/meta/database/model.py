@@ -14,7 +14,6 @@ from sqlalchemy import (
     Column,
     Boolean,
     text,
-    update,
 )
 
 from sqlalchemy.ext.declarative import declarative_base
@@ -59,7 +58,7 @@ Base = declarative_base(metadata=meta)
 ##############
 
 
-@generic_repr
+# @generic_repr
 class User(Base):
     __tablename__ = "user"
 

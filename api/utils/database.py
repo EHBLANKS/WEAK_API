@@ -38,7 +38,8 @@ def get_db():
 
     engine = create_engine(
         SQLALCHEMY_DATABASE_URL,
-        connect_args={"connection_timeout": 15},
+        connect_args={"connect_timeout": 15},
+        echo=False,
         **db_config,
     )
 
