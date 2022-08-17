@@ -14,6 +14,7 @@ from sqlalchemy import (
     Column,
     Boolean,
     text,
+    update,
 )
 
 from sqlalchemy.ext.declarative import declarative_base
@@ -78,7 +79,7 @@ class User(Base):
         TIMESTAMP(timezone=True),
         nullable=False,
         default=time_now,
-        on_update=time_now,
+        onupdate=time_now,
     )
 
     username = Column(String(64), nullable=False)
@@ -109,7 +110,7 @@ class Note(Base):
         TIMESTAMP(timezone=True),
         nullable=False,
         default=time_now,
-        on_update=time_now,
+        onupdate=time_now,
     )
 
     # Title of the note

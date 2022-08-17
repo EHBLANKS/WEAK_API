@@ -9,20 +9,20 @@ import pytest
 from fastapi.testclient import TestClient
 from fastapi import status
 from api.utils.auth import AuthHandler
-
+from sqlalchemy.orm.session import Session
 # Local Imports
-from pprint import pprint as pp
 from api.main import app
 from api.meta.constants.errors import INVALID_USER_PASSWORD, USERNAME_TAKEN
 
 from api.config import get_settings
 from api.endpoints.user import users_db
+from pprint import pprint as pp
 
 settings = get_settings()
 client = TestClient(app)
 
 
-def test_user_creation():
+def test_user_creation(test_db:Session):
     """
     This test ensures that the user gets created
     It also ensures no duplication of users.
@@ -30,7 +30,7 @@ def test_user_creation():
 
     params = {"username": "MONSEC", "password": "123"}
     response = client.post(
-        "/user/create-account",
+        "/user/signup",
         json=params,
     )
     res_data = response.json()

@@ -3,14 +3,16 @@ conftest.py
 configures our pytest test runner and sets up the local database for testing
 """
 
+#System imports
+from re import compile as re_compile
 
 # Package Imports
 import pytest
+from requests_mock import Mocker
 from typing import Generator
-from fastapi.testclient import TestClient
-from fastapi import HTTPException, status, Header
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy import create_engine
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine,event
 from sqlalchemy_utils import (
     database_exists,
     create_database,
@@ -19,6 +21,7 @@ from sqlalchemy_utils import (
 
 # Local Imports
 from api.main import app
+from api.utils.database import get_db
 from api.config import get_settings
 from api.meta.database.model import Base
 
@@ -79,20 +82,52 @@ def test_db(test_session) -> Session:
     """Get the test db session"""
 
     # Start a new test database connection session
-    test_db = test_session()
+    testDb = test_session()
 
     try:
         # Begin transaction for direct database edits
-        test_db.begin_nested()
+        testDb.begin_nested()
 
         # then each time that SAVEPOINT ends, reopen it
-        @event.listens_for(test_db, "after_transaction_end")
+        @event.listens_for(testDb, "after_transaction_end")
         def restart_savepoint(session, transaction):
             if transaction.nested and not transaction._parent.nested:
                 session.begin_nested()
 
-        yield test_db
+        yield testDb
     finally:
         # Rollback any direct database edits
+        testDb.rollback()
+        testDb.close()
+
+
+# Test client for tests to use
+@pytest.fixture(scope="function")
+def client(test_db) -> Generator:
+    def override_db():
+        return test_db
+
+    # def override_firebase(Authorization: str = Header(...)):
+    #     return firebase_override(Authorization)
+
+    with TestClient(app) as tClient:
+        # Begin the transaction for database changes from endpoints
+        test_db.begin_nested()
+
+        # Force all endpoints to use our test db session.
+        app.dependency_overrides[get_db] = override_db
+
+        # Force all endpoints to use our firebase auth override
+        # app.dependency_overrides[require_firebase_auth] = override_firebase
+
+        with Mocker() as adapter:
+            matcher = re_compile("http://testserver/")
+            adapter.register_uri("GET", matcher, real_http=True)
+            adapter.register_uri("POST", matcher, real_http=True)
+            adapter.register_uri("PATCH", matcher, real_http=True)
+            adapter.register_uri("PUT", matcher, real_http=True)
+            adapter.register_uri("DELETE", matcher, real_http=True)
+            yield tClient
+
+        # Rollback any changes made to the database from endpoints
         test_db.rollback()
-        test_db.close()

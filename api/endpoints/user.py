@@ -12,7 +12,8 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from api.utils.auth import AuthHandler
 from api.meta.constants.schemas import AuthDetails
-
+from api.utils.database import get_db
+from sqlalchemy.orm import Session
 
 # Local imports
 from api.config import get_settings
@@ -31,7 +32,7 @@ users_db = []
 
 
 @router.post("/signup", status_code=status.HTTP_201_CREATED)
-def create_account(user_details: AuthDetails) -> None:
+def create_account(user_details: AuthDetails,db:Session=Depends(get_db)) -> None:
     """
     This endpoint creates a user account given a username and a password
     in a json payload.
