@@ -49,3 +49,18 @@ class NoteDeletePayload(BaseModel):
         title="The uuid of the note to delete",
         example=uuid4(),
     )
+
+
+class NoteObject(BaseModel):
+    id: UUID = Field(
+        title="The UUID of the note",
+        example=uuid4(),
+    )
+    title: str = Field(
+        title="The title of the note",
+        example="My super secret note",
+    )
+    description: str = Field(
+        title="The description of the note",
+        example="office e-mail password",
+    )

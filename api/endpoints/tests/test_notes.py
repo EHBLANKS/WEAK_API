@@ -151,3 +151,13 @@ def test_fetch_all_notes_attacker_user(client: TestClient, test_db: Session):
 
     # assert that 5 items were grabbed from the user monsec
     assert len(res_data) == 5
+
+
+def test_attacker_attemps_to_delete_other_user_note(
+    client: TestClient, test_db: Session
+):
+    assert False
+
+
+def test_attacker_attemps_to_post_as_other_user(client: TestClient, test_db: Session):
+    assert False

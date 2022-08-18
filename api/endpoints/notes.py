@@ -15,7 +15,7 @@ from api.config import get_settings
 # Local imports
 from api.utils.auth import AuthHandler, require_user_account
 from api.utils.database import get_db
-from api.meta.constants.schemas import NotePayload, NoteDeletePayload
+from api.meta.constants.schemas import NotePayload, NoteDeletePayload, NoteObject
 from api.meta.database.model import User, Note
 from api.meta.constants.errors import INVALID_USER_PASSWORD, SOMETHING_WENT_WRONG
 from api.meta.constants.messages import NOTE_DELETED, NOTE_CREATED
@@ -31,7 +31,11 @@ get_db = Depends(get_db)
 require_user_account = Depends(require_user_account)
 
 
-@router.get("", status_code=status.HTTP_200_OK)
+@router.get(
+    "",
+    status_code=status.HTTP_200_OK,
+    response_model=NoteObject | list,
+)
 def fetch_notes(
     user_id: UUID = Query(None, alias="user-id"),
     user: User = require_user_account,
@@ -44,13 +48,16 @@ def fetch_notes(
     Returns:
         - List with secrets of the user
     """
-    print(user_id)
     # If there is no user id input, then use the one from the db
     # NOTE: Vuln here, we should not trust user data
     if user_id is None:
         user_id = user.id
 
-    return db.query(Note).filter(Note.user_id == user_id).all()
+    notes = db.query(Note).filter(Note.user_id == user_id).all()
+    return [
+        NoteObject(id=note.id, title=note.title, description=note.description)
+        for note in notes
+    ]
 
 
 @router.post(

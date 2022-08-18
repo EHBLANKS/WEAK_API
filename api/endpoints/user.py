@@ -10,12 +10,12 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from pydantic import BaseModel, Field
 from typing import Optional
-from api.utils.auth import AuthHandler
-from api.meta.constants.schemas import AuthDetails
-from api.utils.database import get_db
 from sqlalchemy.orm import Session
 
 # Local imports
+from api.utils.auth import AuthHandler
+from api.meta.constants.schemas import AuthDetails
+from api.utils.database import get_db
 from api.config import get_settings
 from api.meta.constants.errors import (
     USERNAME_TAKEN,
@@ -23,6 +23,7 @@ from api.meta.constants.errors import (
     SOMETHING_WENT_WRONG,
 )
 from api.meta.database.model import User
+from api.meta.constants.messages import ACCOUNT_CREATED
 
 ####################
 # Setup Router
@@ -54,7 +55,11 @@ def create_account(
     # this might not avoid entering " monsec" -> "monsec"
     # check that the user is not in the db
     user_exists = (
-        db.query(User).filter(User.username == user_details.username).one_or_none()
+        db.query(User)
+        .filter(
+            User.username == user_details.username,
+        )
+        .one_or_none()
     )
     if user_exists:
         raise HTTPException(
@@ -77,7 +82,7 @@ def create_account(
             detail=SOMETHING_WENT_WRONG,
         )
 
-    return
+    return {"msg": ACCOUNT_CREATED}
 
 
 @router.post("/login")
@@ -94,7 +99,13 @@ def login(auth_details: AuthDetails, db: Session = Depends(get_db)) -> dict:
     """
 
     # get user
-    user = db.query(User).filter(User.username == auth_details.username).one_or_none()
+    user = (
+        db.query(User)
+        .filter(
+            User.username == auth_details.username,
+        )
+        .one_or_none()
+    )
 
     # if the username or the password are not valid
     # raise exception
@@ -109,11 +120,6 @@ def login(auth_details: AuthDetails, db: Session = Depends(get_db)) -> dict:
         )
 
     # else: return token
-    token = auth_handler.encode_token(user.username)
+    token = auth_handler.encode_token(str(user.id))
 
     return {"token": token}
-
-
-@router.post("/protected")
-def protected(username=Depends(auth_handler.auth_wrapper)):
-    return {"name": username}
