@@ -43,7 +43,7 @@ def test_session(worker_id):
         settings.DATABASE_USER,
         settings.DATABASE_PASSWORD,
         settings.DATABASE_HOST,
-        f"DVWA_pytest{worker_id}",
+        f"weakapi",
     )
 
     engine = create_engine(SQLALCHEMY_DATABASE_URL)

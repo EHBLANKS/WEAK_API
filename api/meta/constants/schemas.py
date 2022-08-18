@@ -2,7 +2,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 from uuid import uuid4, UUID
-
+from sqlalchemy.orm import relationship
 
 # Local imports
 from api.config import get_settings

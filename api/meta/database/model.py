@@ -17,7 +17,7 @@ from sqlalchemy import (
 )
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.dialects.postgresql import ARRAY, ENUM, TIMESTAMP, UUID
+from sqlalchemy.dialects.postgresql import TIMESTAMP, UUID
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 from sqlalchemy_utils import generic_repr
@@ -58,7 +58,7 @@ Base = declarative_base(metadata=meta)
 ##############
 
 
-# @generic_repr
+@generic_repr
 class User(Base):
     __tablename__ = "user"
 
@@ -83,6 +83,13 @@ class User(Base):
 
     username = Column(String(64), nullable=False)
     password = Column(String(256), nullable=False)
+
+    # notes relationship
+    notes = relationship(
+        "Note",
+        back_populates="user",
+        passive_deletes=True,
+    )
 
 
 #############
@@ -119,7 +126,22 @@ class Note(Base):
     )
 
     # The note/secret
-    note = Column(
+    description = Column(
         String(512),
         nullable=False,
+    )
+
+    # relationship to user
+    user_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("user.id"),
+        nullable=False,
+    )
+
+    user = relationship(
+        "User",
+        foreign_keys=[user_id],
+        back_populates="notes",
+        passive_deletes=True,
+        cascade="delete,all",
     )

@@ -1,14 +1,27 @@
 import jwt
-from fastapi import HTTPException, Security, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import HTTPException, Security, status, Depends
+from fastapi.security import (
+    HTTPAuthorizationCredentials,
+    HTTPBearer,
+    HTTPBasicCredentials,
+)
+from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
+
+# Local Imports
+from api.utils.database import get_db
+from api.meta.database.model import User
 from api.meta.constants.errors import SIGNATURE_EXPIRED, INVALID_TOKEN
 from api.config import get_settings
+from api.meta.constants.errors import USER_DOES_NOT_EXIST
 
 # -----------------------
 settings = get_settings()
 # -----------------------
+
+
+auth_header = HTTPBearer()
 
 
 class AuthHandler:
@@ -80,3 +93,32 @@ class AuthHandler:
         auth: HTTPAuthorizationCredentials = Security(security),
     ) -> str:
         return self.decode_token(auth.credentials)
+
+
+def require_authentication(
+    Authorization: HTTPBasicCredentials = Depends(auth_header),
+):
+    auth_handler = AuthHandler()
+    token = str(Authorization.credentials)
+    decoded_token = auth_handler.decode_token(token)
+
+    return decoded_token
+
+
+def require_user_account(
+    auth: dict = Depends(require_authentication),
+    db: Session = Depends(get_db),
+) -> User:
+    """Given a firebase auth token, returns the user account information"""
+
+    # Get user_id from firebase auth UID
+    userInfo = db.query(User).filter(User.id == auth["id"]).first()
+
+    if userInfo is None:
+        raise HTTPException(
+            status_code=403,
+            detail=USER_DOES_NOT_EXIST,
+            headers={"Authorization": auth},
+        )
+
+    return userInfo

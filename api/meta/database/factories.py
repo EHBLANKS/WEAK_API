@@ -30,3 +30,12 @@ class User_factory(alchemy.SQLAlchemyModelFactory):
 
     class Meta:
         model = mdl.User
+
+
+class Note_factory(alchemy.SQLAlchemyModelFactory):
+
+    title = Faker("lexify", text="random note-????")
+    description = Faker("lexify", text="Just another random description - ???")
+
+    class Meta:
+        model = mdl.Note

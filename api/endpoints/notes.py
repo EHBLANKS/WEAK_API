@@ -8,12 +8,17 @@ Endpoints for creating, viewing, deleting notes.
 from uuid import uuid4, UUID
 from fastapi import APIRouter, HTTPException, status, Query, Depends
 from sqlalchemy.orm import Session
+from sqlalchemy import and_
 from api.config import get_settings
-from api.utils.auth import AuthHandler
-from api.utils.database import get_db
+
 
 # Local imports
-from api.meta.constants.schemas import NotePayload, AuthDetails
+from api.utils.auth import AuthHandler, require_user_account
+from api.utils.database import get_db
+from api.meta.constants.schemas import NotePayload, NoteDeletePayload
+from api.meta.database.model import User, Note
+from api.meta.constants.errors import INVALID_USER_PASSWORD, SOMETHING_WENT_WRONG
+from api.meta.constants.messages import NOTE_DELETED, NOTE_CREATED
 
 # ---------------
 # Setup Router
@@ -22,30 +27,40 @@ router = APIRouter()
 settings = get_settings()
 auth_handler = AuthHandler()
 
+get_db = Depends(get_db)
+require_user_account = Depends(require_user_account)
 
-@router.get("")
+
+@router.get("", status_code=status.HTTP_200_OK)
 def fetch_notes(
-    user=Depends(auth_handler.auth_wrapper),
-    db: Session = Depends(get_db),
+    user_id: UUID = Query(None, alias="user-id"),
+    user: User = require_user_account,
+    db: Session = get_db,
 ):
     """
     This endpoint requires the user to be authenticated
     Args:
-        - None
+        - user_id:UUID the user_id passed will retrieve the user notes
     Returns:
         - List with secrets of the user
     """
+    print(user_id)
+    # If there is no user id input, then use the one from the db
+    # NOTE: Vuln here, we should not trust user data
+    if user_id is None:
+        user_id = user.id
 
-    pass
+    return db.query(Note).filter(Note.user_id == user_id).all()
 
 
 @router.post(
-    "/notes/create",
+    "/create",
     status_code=status.HTTP_201_CREATED,
 )
 def create_note(
     note: NotePayload,
-    user=Depends(auth_handler.auth_wrapper),
+    user: User = require_user_account,
+    db: Session = get_db,
 ):
     """
     This creates a note in the given user
@@ -56,20 +71,51 @@ def create_note(
         Status Code 201 (Created)
     """
 
-    # TODO:
-    # Verify token
-    # Check that the note gets posted under the username in the token
+    # if correct: create new note
+    new_note = Note(
+        user_id=user.id,
+        title=note.title,
+        description=note.description,
+    )
 
-    pass
+    # try to add to the database
+    try:
+        db.add(new_note)
+        db.commit()
+
+    # catch any error
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=SOMETHING_WENT_WRONG,
+        )
+    return {"msg": NOTE_CREATED}
 
 
 @router.delete(
-    "/notes/delete",
-    status_code=status.HTTP_202_ACCEPTED,
+    "/delete",
+    status_code=status.HTTP_200_OK,
 )
 def delete_note(
-    note_id: UUID,
-    db: Session = Depends(get_db),
-    user=Depends(auth_handler.auth_wrapper),
+    note: NoteDeletePayload,
+    db: Session = get_db,
+    user: User = require_user_account,
 ):
-    pass
+
+    # retrieve note from db
+    note = (
+        db.query(Note)
+        .filter(
+            and_(
+                Note.user_id == user.id,
+                Note.id == note.id,
+            ),
+        )
+        .one_or_none()
+    )
+
+    # delete note
+    db.delete(note)
+    db.commit()
+
+    return {"msg": NOTE_DELETED}
