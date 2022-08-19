@@ -49,7 +49,8 @@ class AuthHandler:
         "Creates a JWT token"
 
         payload = {
-            "exp": datetime.utcnow() + timedelta(days=0, minutes=5),
+            # two hour token for the workshop duration
+            "exp": datetime.utcnow() + timedelta(hours=2),
             "iat": datetime.utcnow(),
             "id": user_id,
         }

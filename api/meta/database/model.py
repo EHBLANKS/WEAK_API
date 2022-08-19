@@ -134,7 +134,7 @@ class Note(Base):
     # relationship to user
     user_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("user.id"),
+        ForeignKey("user.id", ondelete="CASCADE"),
         nullable=False,
     )
 

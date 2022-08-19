@@ -2,23 +2,24 @@
 test_notes.py
 Tests for the user endpoints
 """
-from uuid import uuid4, UUID
+from uuid import uuid4
 
 # Package Imports
-import pytest
 from fastapi.testclient import TestClient
 from fastapi import status
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
-from pprint import pprint as pp
 
 # Local Imports
 from api.utils.auth import AuthHandler
 import api.meta.database.factories as fac
 import api.meta.database.model as mdl
 from api.config import get_settings
+from api.meta.constants.errors import NOTE_DOES_NOT_EXIST
 
+# -------------------------
 settings = get_settings()
+# -------------------------
 
 
 def login(user_id: str):
@@ -41,7 +42,6 @@ def test_note_has_been_created_successfully(client: TestClient, test_db: Session
     headers = {"Authorization": f"Bearer {token}"}
     params = {"title": "My new note", "description": "This note is amazing"}
     response = client.post("/notes/create", json=params, headers=headers)
-    res_data = response.json()
     assert response.status_code == status.HTTP_201_CREATED
 
     # check database
@@ -156,8 +156,29 @@ def test_fetch_all_notes_attacker_user(client: TestClient, test_db: Session):
 def test_attacker_attemps_to_delete_other_user_note(
     client: TestClient, test_db: Session
 ):
-    assert False
+    """
+    This test ensures that an 'attacker' cannot delete other's notes.
+    """
+    # setup
+    fac.User_factory._meta.sqlalchemy_session = test_db
+    fac.Note_factory._meta.sqlalchemy_session = test_db
 
+    # create user and note
+    user_id, attacker_id, note_id = str(uuid4()), str(uuid4()), str(uuid4())
+    fac.User_factory.create(id=user_id)
+    fac.User_factory.create(id=attacker_id)
 
-def test_attacker_attemps_to_post_as_other_user(client: TestClient, test_db: Session):
-    assert False
+    # create note as normal user
+    fac.Note_factory.create(id=note_id, user_id=user_id)
+
+    # login token as attacker
+    token = login(attacker_id)
+
+    payload = {"id": note_id}
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # attacker sends the note_id of another user, while authorized
+    response = client.delete("/notes/delete", headers=headers, json=payload)
+    res_data = response.json()
+    assert res_data is not None
+    assert res_data["detail"]["msg"] == NOTE_DOES_NOT_EXIST

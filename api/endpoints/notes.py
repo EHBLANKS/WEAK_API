@@ -5,19 +5,22 @@ Endpoints for creating, viewing, deleting notes.
 
 
 # Package imports
-from uuid import uuid4, UUID
+from uuid import UUID
+from jinja2 import Environment, FileSystemLoader
 from fastapi import APIRouter, HTTPException, status, Query, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from api.config import get_settings
-
 
 # Local imports
 from api.utils.auth import AuthHandler, require_user_account
 from api.utils.database import get_db
 from api.meta.constants.schemas import NotePayload, NoteDeletePayload, NoteObject
 from api.meta.database.model import User, Note
-from api.meta.constants.errors import INVALID_USER_PASSWORD, SOMETHING_WENT_WRONG
+from api.meta.constants.errors import (
+    SOMETHING_WENT_WRONG,
+    NOTE_DOES_NOT_EXIST,
+)
 from api.meta.constants.messages import NOTE_DELETED, NOTE_CREATED
 
 # ---------------
@@ -43,6 +46,10 @@ def fetch_notes(
 ):
     """
     This endpoint requires the user to be authenticated
+
+    NOTE: This endpoint is meant to be vulnerable, this won't
+    check for the correct user, only for a valid session.
+
     Args:
         - user_id:UUID the user_id passed will retrieve the user notes
     Returns:
@@ -58,6 +65,36 @@ def fetch_notes(
         NoteObject(id=note.id, title=note.title, description=note.description)
         for note in notes
     ]
+
+
+@router.get("/{note_id}", status_code=status.HTTP_200_OK)
+def view_note(
+    note_id: UUID,
+    user=require_user_account,
+    db: Session = get_db,
+):
+    """
+    This endpoint returns the note given the UUID
+
+    NOTE: This is meant to be vulnerable, this won't
+    check for correct user, only for a valid session.
+
+    Args:
+        - note_id: UUID, the UUID of the note to display
+
+    Returns:
+        - Jinja2 template rendered (Vulnerability)
+    """
+
+    # get note from db
+    note = db.query(Note).filter(Note.id == note_id).first()
+
+    template_loader = FileSystemLoader(searchpath=settings.JINJA_FILE_PATH)
+    template_env = Environment(loader=template_loader)
+    template = template_env.get_template(settings.NOTE_TEMPLATE)
+    output_text = template.render(note=note)
+    print(output_text)
+    return output_text
 
 
 @router.post(
@@ -121,8 +158,21 @@ def delete_note(
         .one_or_none()
     )
 
+    if note is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=NOTE_DOES_NOT_EXIST,
+        )
+
     # delete note
-    db.delete(note)
-    db.commit()
+    try:
+        db.delete(note)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=SOMETHING_WENT_WRONG,
+        )
 
     return {"msg": NOTE_DELETED}

@@ -110,9 +110,7 @@ def login(auth_details: AuthDetails, db: Session = Depends(get_db)) -> dict:
     # if the username or the password are not valid
     # raise exception
     if user is None or not auth_handler.verify_password(
-        auth_details.password,
-        user.password
-        # auth_details.password, user["password"]
+        auth_details.password, user.password
     ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

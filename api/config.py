@@ -45,6 +45,10 @@ class Settings(BaseSettings):
     APP_DESCRIPTION: str = "DAMN VULNERABLE WEB API"
     APP_VERSION: str = get_version()
 
+    # Jinja2 template filenames
+    NOTE_TEMPLATE = "note_template.html"
+    JINJA_FILE_PATH = "api/meta/jinja_templates/"
+
     # Connection to Postgres database
     DATABASE_HOST: str = ""
     DATABASE_USER: str = ""
