@@ -6,13 +6,14 @@ Endpoints for creating, viewing, deleting notes.
 
 # Package imports
 from uuid import UUID
-from jinja2 import Environment, FileSystemLoader
+
+from jinja2 import Environment, BaseLoader
 from fastapi import APIRouter, HTTPException, status, Query, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
-from api.config import get_settings
 
 # Local imports
+from api.config import get_settings
 from api.utils.auth import AuthHandler, require_user_account
 from api.utils.database import get_db
 from api.meta.constants.schemas import NotePayload, NoteDeletePayload, NoteObject
@@ -20,6 +21,7 @@ from api.meta.database.model import User, Note
 from api.meta.constants.errors import (
     SOMETHING_WENT_WRONG,
     NOTE_DOES_NOT_EXIST,
+    USER_NOT_AUTHORIZED,
 )
 from api.meta.constants.messages import NOTE_DELETED, NOTE_CREATED
 
@@ -69,7 +71,7 @@ def fetch_notes(
 
 @router.get("/{note_id}", status_code=status.HTTP_200_OK)
 def view_note(
-    note_id: UUID,
+    note_id: UUID = Query(alias="note-id"),
     user=require_user_account,
     db: Session = get_db,
 ):
@@ -87,13 +89,49 @@ def view_note(
     """
 
     # get note from db
-    note = db.query(Note).filter(Note.id == note_id).first()
+    note = db.query(Note).filter(Note.id == note_id).one_or_none()
 
-    template_loader = FileSystemLoader(searchpath=settings.JINJA_FILE_PATH)
-    template_env = Environment(loader=template_loader)
-    template = template_env.get_template(settings.NOTE_TEMPLATE)
-    output_text = template.render(note=note)
-    print(output_text)
+    # if the note belongs to an admin and the current user is not
+    if (note.user.is_admin is True) and (not user.is_admin):
+        # raise an error
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=USER_NOT_AUTHORIZED,
+        )
+
+    NOTE_TEMPLATE = (
+        """
+    <!DOCTYPE html>
+    <html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Secret Keeper</title>
+    </head>
+
+    <body>
+
+    </body>
+    <h1>"""
+        + note.title
+        + """</h1>
+    <p>"""
+        + note.description
+        + """</p>
+
+    </html>
+    """
+    )
+
+    # Jinja template rendering, from string
+    # VULN: renders the template when using {{}}
+    template_env = Environment(loader=BaseLoader)
+    template = template_env.from_string(NOTE_TEMPLATE)
+    output_text = template.render()
+
+    # return the template
     return output_text
 
 

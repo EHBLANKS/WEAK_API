@@ -83,7 +83,7 @@ class User(Base):
 
     username = Column(String(64), nullable=False)
     password = Column(String(256), nullable=False)
-
+    is_admin = Column(Boolean, nullable=False, default=False)
     # notes relationship
     notes = relationship(
         "Note",

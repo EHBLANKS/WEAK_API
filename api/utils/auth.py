@@ -110,7 +110,7 @@ def require_user_account(
     auth: dict = Depends(require_authentication),
     db: Session = Depends(get_db),
 ) -> User:
-    """Given a firebase auth token, returns the user account information"""
+    """Given an auth token, returns the user account information"""
 
     # Get user_id from firebase auth UID
     userInfo = db.query(User).filter(User.id == auth["id"]).first()
