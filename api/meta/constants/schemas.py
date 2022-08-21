@@ -26,6 +26,11 @@ class AuthDetails(BaseModel):
         title="The password of the username",
         example="MONSEC{This_is_not_a_flag}",
     )
+    is_admin: Optional[bool] = Field(
+        title="Field that defines if the user is admin",
+        example=False,
+        default=False,
+    )
 
 
 # ----------------------

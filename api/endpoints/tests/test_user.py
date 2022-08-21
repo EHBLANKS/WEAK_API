@@ -93,7 +93,7 @@ def test_user_login(client: TestClient, test_db: Session):
     assert token["id"] == user_id
 
 
-def test_user_login_wrong_password(client: TestClient, test_db: Session):
+def test_user_login_wrong_password(client: TestClient):
     """
     This test ensures that wrong passwords will return an error
     """
@@ -109,3 +109,47 @@ def test_user_login_wrong_password(client: TestClient, test_db: Session):
     res_data = response.json()
     assert res_data is not None
     assert res_data["detail"]["msg"] == INVALID_USER_PASSWORD
+
+
+def test_attacker_gets_admin_privileges_during_signup(
+    client: TestClient, test_db: Session
+):
+    """
+    This test ensures that an attacker can get admin by saying is_admin = True
+    when signing up.
+    """
+
+    payload = {
+        "username": "attacker",
+        "password": "1337",
+        "is_admin": True,
+    }
+    response = client.post("/user/signup", json=payload)
+    res_data = response.json()
+    assert res_data["msg"] == ACCOUNT_CREATED
+    assert response.status_code == status.HTTP_201_CREATED
+
+    # check the db
+    user = test_db.query(mdl.User).filter(mdl.User.username == "attacker").one_or_none()
+    assert user is not None
+    assert user.is_admin is True
+
+
+def test_user_is_not_admin_by_default(client: TestClient, test_db: Session):
+    """
+    This test ensures that a normal signup will by default set is_admin as False
+    without passing any parameter 'is_admin'.
+    """
+    payload = {
+        "username": "user",
+        "password": "1337",
+    }
+    response = client.post("/user/signup", json=payload)
+    res_data = response.json()
+    assert res_data["msg"] == ACCOUNT_CREATED
+    assert response.status_code == status.HTTP_201_CREATED
+
+    # check the db
+    user = test_db.query(mdl.User).filter(mdl.User.username == "user").one_or_none()
+    assert user is not None
+    assert user.is_admin is False

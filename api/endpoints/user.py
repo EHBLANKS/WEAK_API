@@ -69,13 +69,21 @@ def create_account(
 
     # hash the password and save it
     hashed_password = auth_handler.get_password_hash(user_details.password)
+
+    # create user
+    # VULN: shouldn't pass is_admin here (param injection)
     new_user = User(
         username=user_details.username,
         password=hashed_password,
+        is_admin=user_details.is_admin,  # This should be patched
     )
+
+    # add user to the db
     try:
         db.add(new_user)
         db.commit()
+
+    # if somethingwent wrong raise exception
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
