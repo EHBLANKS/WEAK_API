@@ -71,7 +71,7 @@ def fetch_notes(
 
 @router.get("/{note_id}", status_code=status.HTTP_200_OK)
 def view_note(
-    note_id: UUID = Query(alias="note-id"),
+    note_id: UUID = Query(None, alias="note-id"),
     user=require_user_account,
     db: Session = get_db,
 ):
