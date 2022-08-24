@@ -28,7 +28,6 @@ from api.meta.constants.errors import (
     NOTE_DOES_NOT_EXIST,
     USER_NOT_AUTHORIZED,
 )
-from api.meta.constants.messages import NOTE_DELETED, NOTE_CREATED
 
 # ---------------
 # Setup Router
@@ -112,7 +111,6 @@ def create_note(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=SOMETHING_WENT_WRONG,
         )
-    return {"msg": NOTE_CREATED}
 
 
 @router.delete(
@@ -154,10 +152,12 @@ def delete_note(
             detail=SOMETHING_WENT_WRONG,
         )
 
-    return {"msg": NOTE_DELETED}
 
-
-@router.get("/{note_id}", status_code=status.HTTP_200_OK)
+@router.get(
+    "/{note_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=NoteObject,
+)
 def view_note(
     note_id: UUID = Query(None, alias="note-id"),
     user=require_user_account,
@@ -187,37 +187,25 @@ def view_note(
             detail=USER_NOT_AUTHORIZED,
         )
 
-    NOTE_TEMPLATE = (
+    # NOTE:
+    # Vuln here! (on purpose)
+    DESCRIPTION = (
         """
-    <!DOCTYPE html>
-    <html lang="en">
-
-    <head>
-        <meta charset="UTF-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Secret Keeper</title>
-    </head>
-
-    <body>
-
-    </body>
-    <h1>"""
-        + note.title
-        + """</h1>
     <p>"""
         + note.description
         + """</p>
-
-    </html>
     """
     )
 
     # Jinja template rendering, from string
     # VULN: renders the template when using {{}}
     template_env = Environment(loader=BaseLoader)
-    template = template_env.from_string(NOTE_TEMPLATE)
-    output_text = template.render()
+    description = template_env.from_string(DESCRIPTION)
+    description_text = description.render()
 
     # return the template
-    return output_text
+    return NoteObject(
+        id=note.id,
+        title=note.title,
+        description=description_text,
+    )
