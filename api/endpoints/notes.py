@@ -16,7 +16,12 @@ from sqlalchemy import and_
 from api.config import get_settings
 from api.utils.auth import AuthHandler, require_user_account
 from api.utils.database import get_db
-from api.meta.constants.schemas import NotePayload, NoteDeletePayload, NoteObject
+from api.meta.constants.schemas import (
+    NotePayload,
+    NoteDeletePayload,
+    NoteObject,
+    SimplifiedNoteObject,
+)
 from api.meta.database.model import User, Note
 from api.meta.constants.errors import (
     SOMETHING_WENT_WRONG,
@@ -63,10 +68,7 @@ def fetch_notes(
         user_id = user.id
 
     notes = db.query(Note).filter(Note.user_id == user_id).all()
-    return [
-        NoteObject(id=note.id, title=note.title, description=note.description)
-        for note in notes
-    ]
+    return [SimplifiedNoteObject(id=note.id, title=note.title) for note in notes]
 
 
 @router.get("/{note_id}", status_code=status.HTTP_200_OK)
