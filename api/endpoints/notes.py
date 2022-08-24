@@ -67,7 +67,12 @@ def fetch_notes(
     if user_id is None:
         user_id = user.id
 
-    notes = db.query(Note).filter(Note.user_id == user_id).all()
+    notes = (
+        db.query(Note)
+        .filter(Note.user_id == user_id)
+        .order_by(Note.created_date.desc())
+        .all()
+    )
     return [SimplifiedNoteObject(id=note.id, title=note.title) for note in notes]
 
 
