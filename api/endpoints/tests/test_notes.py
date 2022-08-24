@@ -284,5 +284,5 @@ def test_a_privileged_attacker_attempts_to_get_an_admin_notes(
     print(res_data)
     assert res_data is not None
     assert response.status_code == status.HTTP_200_OK
-    assert "DO NOT READ" in res_data
-    assert "I AM THE ADMIN, I HAVE POWER!" in res_data
+    assert "DO NOT READ" in res_data["title"]
+    assert "I AM THE ADMIN, I HAVE POWER!" in res_data["description"]
