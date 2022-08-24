@@ -71,6 +71,87 @@ def fetch_notes(
     return [SimplifiedNoteObject(id=note.id, title=note.title) for note in notes]
 
 
+@router.post(
+    "",
+    status_code=status.HTTP_201_CREATED,
+)
+def create_note(
+    note: NotePayload,
+    user: User = require_user_account,
+    db: Session = get_db,
+):
+    """
+    This creates a note in the given user
+    Args:
+        - title: str
+        - note: str
+    Returns:
+        Status Code 201 (Created)
+    """
+
+    # if correct: create new note
+    new_note = Note(
+        user_id=user.id,
+        title=note.title,
+        description=note.description,
+    )
+
+    # try to add to the database
+    try:
+        db.add(new_note)
+        db.commit()
+
+    # catch any error
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=SOMETHING_WENT_WRONG,
+        )
+    return {"msg": NOTE_CREATED}
+
+
+@router.delete(
+    "",
+    status_code=status.HTTP_200_OK,
+)
+def delete_note(
+    note: NoteDeletePayload,
+    db: Session = get_db,
+    user: User = require_user_account,
+):
+
+    # retrieve note from db
+    note = (
+        db.query(Note)
+        .filter(
+            and_(
+                Note.user_id == user.id,
+                Note.id == note.id,
+            ),
+        )
+        .one_or_none()
+    )
+
+    if note is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=NOTE_DOES_NOT_EXIST,
+        )
+
+    # delete note
+    try:
+        db.delete(note)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=SOMETHING_WENT_WRONG,
+        )
+
+    return {"msg": NOTE_DELETED}
+
+
 @router.get("/{note_id}", status_code=status.HTTP_200_OK)
 def view_note(
     note_id: UUID = Query(None, alias="note-id"),
@@ -135,84 +216,3 @@ def view_note(
 
     # return the template
     return output_text
-
-
-@router.post(
-    "/create",
-    status_code=status.HTTP_201_CREATED,
-)
-def create_note(
-    note: NotePayload,
-    user: User = require_user_account,
-    db: Session = get_db,
-):
-    """
-    This creates a note in the given user
-    Args:
-        - title: str
-        - note: str
-    Returns:
-        Status Code 201 (Created)
-    """
-
-    # if correct: create new note
-    new_note = Note(
-        user_id=user.id,
-        title=note.title,
-        description=note.description,
-    )
-
-    # try to add to the database
-    try:
-        db.add(new_note)
-        db.commit()
-
-    # catch any error
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=SOMETHING_WENT_WRONG,
-        )
-    return {"msg": NOTE_CREATED}
-
-
-@router.delete(
-    "/delete",
-    status_code=status.HTTP_200_OK,
-)
-def delete_note(
-    note: NoteDeletePayload,
-    db: Session = get_db,
-    user: User = require_user_account,
-):
-
-    # retrieve note from db
-    note = (
-        db.query(Note)
-        .filter(
-            and_(
-                Note.user_id == user.id,
-                Note.id == note.id,
-            ),
-        )
-        .one_or_none()
-    )
-
-    if note is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=NOTE_DOES_NOT_EXIST,
-        )
-
-    # delete note
-    try:
-        db.delete(note)
-        db.commit()
-    except Exception:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=SOMETHING_WENT_WRONG,
-        )
-
-    return {"msg": NOTE_DELETED}
