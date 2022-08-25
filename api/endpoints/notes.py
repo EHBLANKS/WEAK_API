@@ -193,9 +193,6 @@ def view_note(
             detail=USER_NOT_AUTHORIZED,
         )
 
-    # NOTE:
-    # Vuln here! (on purpose)
-
     # Jinja template rendering, from string
     # VULN: renders the template when using {{}}
     template_env = Environment(loader=BaseLoader)

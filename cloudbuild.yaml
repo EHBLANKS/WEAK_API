@@ -1,5 +1,0 @@
-steps:
-- name: "gcr.io/cloud-builders/docker"
-  args: ["build","-t","gcr.io/testing-apps-340102/weak_api","."]
-- name: "gcr.io/cloud-builders/docker"
-  args: ["push","-t","gcr.io/testing-apps-340102/weak_api","."]

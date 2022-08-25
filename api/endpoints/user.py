@@ -111,7 +111,7 @@ def login(auth_details: AuthDetails, db: Session = Depends(get_db)) -> dict:
     user = (
         db.query(User)
         .filter(
-            User.username == auth_details.username,
+            User.username == auth_details.username.lower(),
         )
         .one_or_none()
     )
