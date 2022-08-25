@@ -54,6 +54,7 @@ def create_account(
     # avoids creating 2 accounts with the same username
     # this might not avoid entering " monsec" -> "monsec"
     # check that the user is not in the db
+    user_details.username = user_details.username.lower()
     user_exists = (
         db.query(User)
         .filter(

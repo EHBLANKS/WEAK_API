@@ -179,6 +179,12 @@ def view_note(
     # get note from db
     note = db.query(Note).filter(Note.id == note_id).one_or_none()
 
+    if note is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=NOTE_DOES_NOT_EXIST,
+        )
+
     # if the note belongs to an admin and the current user is not
     if (note.user.is_admin is True) and (not user.is_admin):
         # raise an error
@@ -189,18 +195,11 @@ def view_note(
 
     # NOTE:
     # Vuln here! (on purpose)
-    DESCRIPTION = (
-        """
-    <p>"""
-        + note.description
-        + """</p>
-    """
-    )
 
     # Jinja template rendering, from string
     # VULN: renders the template when using {{}}
     template_env = Environment(loader=BaseLoader)
-    description = template_env.from_string(DESCRIPTION)
+    description = template_env.from_string(note.description)
     description_text = description.render()
 
     # return the template
