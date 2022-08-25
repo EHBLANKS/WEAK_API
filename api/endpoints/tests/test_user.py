@@ -40,7 +40,7 @@ def test_user_creation(client: TestClient, test_db: Session):
     assert response.status_code == status.HTTP_201_CREATED
     assert res_data["msg"] == ACCOUNT_CREATED
     # check that the user has been created in the database properly
-    query = test_db.query(mdl.User).filter(mdl.User.username == "MONSEC").one_or_none()
+    query = test_db.query(mdl.User).filter(mdl.User.username == "monsec").one_or_none()
     assert query is not None
 
 
@@ -48,10 +48,10 @@ def test_user_creation_same_user(client: TestClient, test_db: Session):
     """This test avoids the creation of multiple users with the same name"""
     fac.User_factory._meta.sqlalchemy_session = test_db
     user_id = uuid4()
-    fac.User_factory.create(id=user_id, username="MONSEC")
+    fac.User_factory.create(id=user_id, username="monsec")
 
     # try to create the same user
-    params = {"username": "MONSEC", "password": "123"}
+    params = {"username": "monsec", "password": "123"}
     response = client.post(
         "/user/signup",
         json=params,
@@ -66,7 +66,7 @@ def test_user_creation_same_user(client: TestClient, test_db: Session):
     query = (
         test_db.query(mdl.User)
         .filter(
-            mdl.User.username == "MONSEC",
+            mdl.User.username == "monsec",
         )
         .count()
     )

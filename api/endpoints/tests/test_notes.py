@@ -41,7 +41,7 @@ def test_note_has_been_created_successfully(client: TestClient, test_db: Session
 
     headers = {"Authorization": f"Bearer {token}"}
     params = {"title": "My new note", "description": "This note is amazing"}
-    response = client.post("/notes/create", json=params, headers=headers)
+    response = client.post("/notes", json=params, headers=headers)
     assert response.status_code == status.HTTP_201_CREATED
 
     # check database
@@ -75,7 +75,7 @@ def test_note_has_been_deleted_successfully(client: TestClient, test_db: Session
 
     headers = {"Authorization": f"Bearer {token}"}
     params = {"id": note_id}
-    response = client.delete("/notes/delete", json=params, headers=headers)
+    response = client.delete("/notes", json=params, headers=headers)
     assert response.status_code == status.HTTP_200_OK
 
     # check database
@@ -178,7 +178,7 @@ def test_attacker_attemps_to_delete_other_user_note(
     headers = {"Authorization": f"Bearer {token}"}
 
     # attacker sends the note_id of another user, while authorized
-    response = client.delete("/notes/delete", headers=headers, json=payload)
+    response = client.delete("/notes", headers=headers, json=payload)
     res_data = response.json()
     assert res_data is not None
     assert res_data["detail"]["msg"] == NOTE_DOES_NOT_EXIST
@@ -284,5 +284,5 @@ def test_a_privileged_attacker_attempts_to_get_an_admin_notes(
     print(res_data)
     assert res_data is not None
     assert response.status_code == status.HTTP_200_OK
-    assert "DO NOT READ" in res_data
-    assert "I AM THE ADMIN, I HAVE POWER!" in res_data
+    assert "DO NOT READ" in res_data["title"]
+    assert "I AM THE ADMIN, I HAVE POWER!" in res_data["description"]
