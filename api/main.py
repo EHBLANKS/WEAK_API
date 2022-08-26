@@ -89,7 +89,7 @@ DEFAULT_RESPONSE_CODES = {
 }
 
 
-origins = ["http://34.129.141.44"]
+origins = ["http://34.129.141.44:8080/*"]
 
 app.add_middleware(
     CORSMiddleware,
