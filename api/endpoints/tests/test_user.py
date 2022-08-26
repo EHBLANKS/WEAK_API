@@ -82,7 +82,7 @@ def test_user_login(client: TestClient, test_db: Session):
     fac.User_factory._meta.sqlalchemy_session = test_db
     user_id = str(uuid4())
     password = AuthHandler().get_password_hash("MONSEC")
-    fac.User_factory.create(id=user_id, username="MONSEC", password=password)
+    fac.User_factory.create(id=user_id, username="monsec", password=password)
 
     # Login into account
     params = {"username": "MONSEC", "password": "MONSEC"}
